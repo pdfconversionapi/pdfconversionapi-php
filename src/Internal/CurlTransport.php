@@ -77,8 +77,11 @@ final class CurlTransport
                 return strlen($line);
             },
         ];
-        if (defined('CURLOPT_PROTOCOLS_STR')) {
-            $options[CURLOPT_PROTOCOLS_STR] = 'http,https';
+        // CURLOPT_PROTOCOLS_STR exists from PHP 8.3 (curl 7.85); read it by name so older PHP
+        // versions, and static analysis on them, never refer to an undefined constant.
+        $protocolsStr = defined('CURLOPT_PROTOCOLS_STR') ? constant('CURLOPT_PROTOCOLS_STR') : null;
+        if (is_int($protocolsStr)) {
+            $options[$protocolsStr] = 'http,https';
         } else {
             $options[CURLOPT_PROTOCOLS] = CURLPROTO_HTTP | CURLPROTO_HTTPS;
         }
