@@ -1,0 +1,13 @@
+# Keep Composer installs (dist archives) to the library itself.
+/.github             export-ignore
+/conformance         export-ignore
+/examples            export-ignore
+/tests               export-ignore
+/.gitattributes      export-ignore
+/.gitignore          export-ignore
+/.php-cs-fixer.dist.php export-ignore
+/phpstan.neon.dist   export-ignore
+/phpunit.xml.dist    export-ignore
+/RELEASING.md        export-ignore
+
+* text=auto eol=lf

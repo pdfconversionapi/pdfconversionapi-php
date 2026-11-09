@@ -1,0 +1,69 @@
+{
+    "name": "pdfconversionapi/pdfconversionapi",
+    "description": "Official PHP client for the PDF Conversion API: convert Office documents, HTML, images and more to PDF, and merge, split, compress or watermark PDFs.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "pdf",
+        "pdf conversion",
+        "docx to pdf",
+        "html to pdf",
+        "pdf to jpg",
+        "merge pdf",
+        "convert",
+        "api",
+        "sdk"
+    ],
+    "homepage": "https://pdfconversionapi.com/docs",
+    "authors": [
+        {
+            "name": "Zeel Shekhaliya",
+            "homepage": "https://pdfconversionapi.com"
+        }
+    ],
+    "support": {
+        "docs": "https://pdfconversionapi.com/docs",
+        "issues": "https://github.com/pdfconversionapi/pdfconversionapi-php/issues",
+        "source": "https://github.com/pdfconversionapi/pdfconversionapi-php"
+    },
+    "require": {
+        "php": ">=8.1",
+        "ext-curl": "*",
+        "ext-json": "*"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.64",
+        "phpstan/phpstan": "^2.1",
+        "phpstan/phpstan-phpunit": "^2.0",
+        "phpunit/phpunit": "^10.5 || ^11.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "PdfConversionApi\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "PdfConversionApi\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "scripts": {
+        "test": "phpunit --testsuite unit,conformance",
+        "test:unit": "phpunit --testsuite unit",
+        "test:conformance": "phpunit --testsuite conformance",
+        "test:live": "phpunit --testsuite live",
+        "analyse": "phpstan analyse --no-progress",
+        "cs": "php-cs-fixer check --diff",
+        "cs:fix": "php-cs-fixer fix"
+    },
+    "scripts-descriptions": {
+        "test": "Unit tests and the shared conformance suite (needs Node.js 18+ for the mock API)",
+        "test:live": "Live tests against the real API (conformance/.local-api.env, or PDFCONVERSIONAPI_LIVE_BASE_URL and PDFCONVERSIONAPI_KEY; skipped without either)",
+        "analyse": "PHPStan at the max level",
+        "cs": "Check PSR-12 formatting",
+        "cs:fix": "Fix PSR-12 formatting"
+    }
+}

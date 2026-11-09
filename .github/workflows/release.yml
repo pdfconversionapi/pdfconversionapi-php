@@ -1,0 +1,82 @@
+name: Release
+
+# Packagist reads new versions from git tags through its GitHub webhook (see RELEASING.md), so
+# this workflow checks the tag, runs the unit and conformance tests (with the suite bundled in
+# conformance/), then the live tests against the production API when the PDFCONVERSIONAPI_KEY
+# secret is set, and only then creates the GitHub release. It can't hold back the Packagist
+# version, which appears as soon as the tag is pushed. It never runs on its own: push a tag such
+# as v0.1.0 to start it.
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      PDFCONVERSIONAPI_CONFORMANCE_DIR: ${{ github.workspace }}/conformance
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check that the conformance suite is in the repository
+        run: |
+          test -f conformance/cases.json && test -f conformance/mock-server.mjs || {
+            echo "::error::conformance/ is missing: this repository keeps a copy of the shared test suite (https://github.com/pdfconversionapi/sdk-conformance) there"
+            exit 1
+          }
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: curl, json
+          coverage: none
+          tools: composer:v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate composer.json
+        run: composer validate --strict
+
+      - name: Install dependencies
+        run: composer update --no-interaction --no-progress --prefer-dist
+
+      - name: Check that the tag matches Client::VERSION
+        run: |
+          version=$(php -r 'require "vendor/autoload.php"; echo PdfConversionApi\Client::VERSION;')
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match Client::VERSION $version"
+            exit 1
+          fi
+
+      - name: Unit and conformance tests
+        run: vendor/bin/phpunit --testsuite unit,conformance
+
+      - name: Live tests against the production API
+        env:
+          PDFCONVERSIONAPI_KEY: ${{ secrets.PDFCONVERSIONAPI_KEY }}
+          PDFCONVERSIONAPI_LIVE_BASE_URL: https://api.pdfconversionapi.com
+        run: |
+          if [ -z "$PDFCONVERSIONAPI_KEY" ]; then
+            echo "::warning::The PDFCONVERSIONAPI_KEY secret is not set: live tests skipped."
+            exit 0
+          fi
+          vendor/bin/phpunit --testsuite live
+
+      - name: Release notes from CHANGELOG.md
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="$version" '
+            /^## / { if (found) exit; if (index($0, "## " v " ") == 1 || $0 == "## " v) { found = 1; next } }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+          test -s release-notes.md || { echo "::error::CHANGELOG.md has no section for $version"; exit 1; }
+
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file release-notes.md --verify-tag
